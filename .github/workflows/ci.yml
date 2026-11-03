@@ -1,0 +1,48 @@
+name: Tests et conteneurs
+on:
+  push:
+    branches: [main, develop, preprod]
+  pull_request:
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+  frontend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: CI=true npm test -- --watchAll=false
+      - run: CI=false npm run build
+  docker-build:
+    needs: [backend-tests, frontend-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build all services
+        run: |
+          docker build -t exam-backend ./backend
+          docker build -t exam-gateway ./gateway
+          docker build -t exam-notifications ./microservices/notifications
+          docker build -t exam-stock ./microservices/stock-management
+          docker build -t exam-frontend ./frontend

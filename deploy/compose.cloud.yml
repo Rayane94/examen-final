@@ -1,0 +1,68 @@
+# Example cloud deployment on a Linux VPS, NOT a deployed environment.
+# docker compose --env-file .env.prod -f deploy/compose.cloud.yml up -d --build
+name: ${COMPOSE_PROJECT_NAME:-exam-prod}
+services:
+  frontend:
+    build: ../frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: '5000'
+      MONGO_URI: ${MONGO_URI:?Fournir URI MongoDB Atlas ou MongoDB externe}
+      JWT_SECRET: ${JWT_SECRET:?Secret manquant}
+      COOKIE_SECURE: 'true'
+      PUBLIC_ORIGIN: https://${APP_DOMAIN:?Domaine manquant}
+      GATEWAY_URL: http://gateway:8000
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Secret manquant}
+      NOTIFICATION_EMAIL: ${NOTIFICATION_EMAIL:-}
+  gateway:
+    build: ../gateway
+    restart: unless-stopped
+    environment:
+      GATEWAY_PORT: '8000'
+      NOTIFI_SERVICE_URL: http://notifications:4002
+      STOCK_SERVICE_URL: http://stock-management:4003
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Secret manquant}
+  notifications:
+    build: ../microservices/notifications
+    restart: unless-stopped
+    environment:
+      NOTIFI_PORT: '4002'
+      MAIL_MODE: ${MAIL_MODE:-disabled}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+  stock-management:
+    build: ../microservices/stock-management
+    restart: unless-stopped
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Domaine manquant}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    profiles: [monitoring]
+    restart: unless-stopped
+    volumes:
+      - uptime_data:/app/data
+volumes:
+  caddy_data:
+  caddy_config:
+  uptime_data:
