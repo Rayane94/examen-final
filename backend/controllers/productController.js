@@ -5,6 +5,11 @@ exports.getProducts = async (req, res) => {
   try { res.json(await Product.find().sort({ name: 1 })); }
   catch (err) { logger.error('products_read_error'); res.status(500).json({ message: 'Erreur serveur' }); }
 };
+/** Modifie le stock d'un produit après vérification des bornes et du rôle.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 exports.updateProductStock = async (req, res) => {
   const productId = req.params.productId || req.params.id;
   const stock = req.body?.stock;

@@ -2,7 +2,7 @@
 
 **Application :** site e-commerce React / Express / MongoDB avec API Gateway et deux microservices.  
 **Contexte :** correction du projet fourni dans `exam.zip`, Cloud Campus.  
-**Statut :** code préparé ; les tests de production et les captures doivent être réalisés sur l'environnement du candidat.  
+**Statut :** services et parcours locaux testés sur la VM Debian 13, CI GitHub Actions réussie ; les deux déploiements cloud publics restent à réaliser.
 **Date :** 3 novembre 2026.
 
 ## Synthèse de l'architecture
@@ -35,11 +35,11 @@ L'API est responsable de la mise à jour effective des stocks et des commandes. 
 
 **Commandes :** `bash scripts/setup.sh`, `COMPOSE_PARALLEL_LIMIT=1 docker compose build`, `docker compose up -d`, `docker compose ps`. Pour production, configurer `.env.prod`, hôte distant autorisé et secrets GitHub `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`, `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH` dans chaque environnement GitHub.
 
-**Non réalisé :** exécution de workflows sur GitHub, push et déploiement public. **Preuves à ajouter :** état des workflows, conteneurs healthy, historique de déploiement.
+**Réalisé :** push sur GitHub `Rayane94/examen-final` et workflow CI « Tests et conteneurs » validé (backend-tests, frontend-tests, docker-build). **Reste à faire :** publication des images et CD préproduction/production. **Preuves :** capture GitHub Actions, conteneurs healthy, futur historique de déploiement.
 
 ## E25 — Journalisation et audit
 
-**Code fourni :** logs JSON structurés (heure, niveau, événement) pour les opérations critiques ; identifiant de requête (`X-Request-ID`), statut et durée HTTP ; absence de secrets dans les logs ; journaux des microservices via stdout. Collecte avec `docker compose logs`, stockage/rotation complémentaires à configurer sur l'hébergeur.
+**Code fourni :** Pino et logs JSON structurés (heure, niveau, événement) pour les opérations critiques ; identifiant de requête (`X-Request-ID`), statut et durée HTTP ; absence de secrets dans les logs ; journaux des microservices via stdout. Collecte avec `docker compose logs`, stockage/rotation complémentaires à configurer sur l'hébergeur.
 
 **Preuves à ajouter :** sortie des logs après inscription, connexion, commande et échec de validation ; rotation/rétention configurées en production.
 
@@ -47,13 +47,13 @@ L'API est responsable de la mise à jour effective des stocks et des commandes. 
 
 **Code fourni :** `/health` et `/api/health`, `healthcheck` Docker, service Uptime Kuma optionnel via `docker compose --profile monitoring up -d`. Configurer dans Uptime Kuma les sondes HTTP frontend/backend/gateway et alertes par mail/webhook si service mail fourni.
 
-**Non réalisé :** sondes Uptime Kuma créées et alertes testées dans un service live. **Preuves à ajouter :** captures sonde UP/DOWN, paramètres d'alerte et notification reçue.
+**Réalisé localement :** trois sondes Uptime Kuma configurées, alerte SMTP fonctionnelle, gateway volontairement arrêtée puis redémarrée (DOWN → UP), messages d'alerte reçus. **Reste à faire :** sondes et alertes dans les deux environnements cloud. **Preuves :** captures UP/DOWN, e-mail d'alerte et retour à la normale.
 
 ## E27 — Bugs et qualité logicielle
 
 **Bugs corrigés :** backend admin routes non montées ; Docker Compose incomplet et ports microservices erronés ; URLs localhost codées en dur ; suppression de commande vide ; validation commande simulée ; statut non validé ; clés React incorrectes ; mutation de l'état du panier ; formulaires de livraison non initialisés. Gestion des erreurs et checks ajoutés. Le code d'exemple `App.test.js` qui attendait "learn react" a été remplacé.
 
-**Tests effectués dans l'environnement de préparation :** `node --test backend/tests/*.test.js` → **6/6 réussis** ; analyse de syntaxe `node --check` sur les sources backend/gateway/microservices → réussie. **À tester sur la VM :** Docker Compose, les API réelles, inscription, connexion, panier, commande, admin, mise à jour stock.
+**Réalisé sur la VM :** Docker Compose et healthchecks, tests backend (6/6 avant correctif), test React (1/1), parcours inscription/connexion/panier/commande, administration, stock et notifications SMTP réellement reçues. **Après le présent correctif :** rejouer les tests backend (10 attendus), le test React, les images Docker et le smoke test ; capturer les résultats.
 
 ## E28 — Sécurité applicative
 
@@ -70,13 +70,13 @@ L'API est responsable de la mise à jour effective des stocks et des commandes. 
 | Microservices directement accessibles | Réseau Docker privé + token gateway |
 | Réponses d'erreur peu robustes | Codes HTTP normalisés et erreurs génériques |
 
-**Limitations restantes :** pas de paiement effectif ; besoin de transactions MongoDB répliquées pour une atomicité multi-produits stricte ; durcissement CSRF complémentaire recommandé pour déploiements multi-origines ; audit npm réseau à exécuter, vérifier les versions transitoires ; SMTP réel facultatif.
+**Limitations restantes :** pas de paiement effectif ; besoin de transactions MongoDB répliquées pour une atomicité multi-produits stricte ; durcissement CSRF complémentaire recommandé pour déploiements multi-origines. Audit npm observé : backend 0 vulnérabilité ; frontend 74 (13 élevées, 50 modérées, 11 faibles), principalement parmi les outils Create React App. SMTP réel validé localement, mais doit être configuré séparément dans le cloud. Revérifier les audits après nouvelles installations.
 
 **Preuves à ajouter :** refus 401 sans connexion, 403 avec rôle user, 400 pour quantité négative, 409 stock insuffisant, aucun mot de passe exposé.
 
 ## E29 — Documentation et changelog
 
-**Code fourni :** `README.md`, `CHANGELOG.md`, `docs/ROUTES_GENEREES.md`, script `node scripts/generate-docs.js` générant un inventaire des routes depuis le code, `.env.example` et commandes de diagnostic. Captures requises par la consigne à ajouter à la version finale.
+**Code fourni :** annotations JSDoc de fonctions backend, `README.md`, `CHANGELOG.md`, `docs/ROUTES_GENEREES.md`, script `node scripts/generate-docs.js` générant un inventaire des routes depuis le code, `.env.example` et commandes de diagnostic. Captures requises par la consigne à ajouter à la version finale.
 
 ## Captures d'écran à intégrer au rendu
 
@@ -96,11 +96,11 @@ L'API est responsable de la mise à jour effective des stocks et des commandes. 
 
 | Travail | État dans l'archive | À faire pendant l'examen |
 |---|---|---|
-| Correctifs applicatifs E27–E28 | Code préparé | Tester bout en bout, audit dépendances |
-| Docker Compose E24 | Configuré | Builder, lancer, capturer |
-| Préproduction | Config locale fournie | Vérifier conteneurs et API |
+| Correctifs applicatifs E27–E28 | Tests locaux validés, audit exécuté | Revalider après correctif, joindre captures et rapport des risques résiduels |
+| Docker Compose E24 | Configuré et démarré sur Debian | Rebuilder et tester après correctif |
+| Préproduction | Qualification locale Docker testée | Déployer environnement cloud séparé |
 | Production E21–E23 | Exemple VPS/HTTPS | Héberger, régler DNS/SSL, prouver |
-| CI/CD E24 | Workflows créés | Push, connecter secrets/runner, observer succès |
+| CI/CD E24 | Push GitHub et CI 3 jobs verts | Déployer sur deux environnements et prouver les déploiements |
 | Logs E25 | Code ajouté | Capturer logs et preuve de rétention |
-| Supervision E26 | Sondes possibles | Configurer Uptime Kuma, alertes |
+| Supervision E26 | Trois sondes et SMTP locaux testés | Refaire les alertes en préprod/prod |
 | Documentation E29 | README/Changelog/routes | Ajouter captures et accès de test |

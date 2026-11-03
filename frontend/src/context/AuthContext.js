@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api } from '../services/api';
 const AuthContext = createContext(null);
+/**
+ * Fournit l'état de session aux pages React.
+ * L'API dépose un cookie HttpOnly : aucun JWT n'est stocké dans localStorage.
+ * À chaque chargement de l'interface, /auth/me recharge l'utilisateur connecté.
+ */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);

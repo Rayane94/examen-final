@@ -9,6 +9,12 @@ const event = async (path, payload) => {
   try { await axios.post(`${gateway}${path}`, payload, { timeout: 1500, headers: headers() }); }
   catch { logger.warn('service_notification_failed', { path }); }
 };
+/** Enregistre une commande et décrémente le stock par mise à jour conditionnelle.
+ * Émet ensuite les événements notification et stock vers la gateway privée.
+ * @param {import('express').Request} req - Corps validé et utilisateur authentifié.
+ * @param {import('express').Response} res - Réponse JSON/HTTP.
+ * @returns {Promise<void>}
+ */
 exports.createOrder = async (req, res) => {
   const body = req.body;
   if (!validOrder(body)) return res.status(400).json({ message: 'Commande, livraison ou paiement invalide' });
@@ -67,6 +73,11 @@ exports.deleteOrder = async (req, res) => {
     res.json({ message: 'Commande supprimée' });
   } catch { res.status(500).json({ message: 'Erreur serveur' }); }
 };
+/** Change le statut d'une commande (route protégée administrateur).
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 exports.updateOrderStatus = async (req, res) => {
   const id = req.params.id || req.params.orderId;
   const { status } = req.body || {};

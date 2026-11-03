@@ -69,7 +69,7 @@ const Admin = () => {
 
       // Mise à jour de l'affichage avec le nouveau stock
       const updatedProducts = products.map((product) =>
-        product._id === productId ? { ...product, stock: stockValue } : product
+        product._id === productId ? { ...product, stock: Number(stockValue) } : product
       );
       setProducts(updatedProducts);
 

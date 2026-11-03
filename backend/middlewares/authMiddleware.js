@@ -1,9 +1,19 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+/** Lit un cookie nommé dans les en-têtes de requête.
+ * @param {import('express').Request} req - Requête HTTP.
+ * @param {string} name - Nom du cookie.
+ * @returns {string|null}
+ */
 function getCookie(req, name) {
   const segment = (req.headers.cookie || '').split(';').map(v => v.trim()).find(v => v.startsWith(name + '='));
   return segment ? decodeURIComponent(segment.slice(name.length + 1)) : null;
 }
+/** Vérifie la signature JWT et charge le rôle depuis MongoDB.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
 exports.authenticateToken = async (req, res, next) => {
   const auth = req.get('authorization') || '';
   const bearer = auth.startsWith('Bearer ') ? auth.slice(7) : null;
@@ -20,6 +30,11 @@ exports.authenticateToken = async (req, res, next) => {
     return res.status(401).json({ message: 'Session invalide ou expirée' });
   }
 };
+/** Refuse l'accès aux routes administrateur pour les autres rôles.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
 exports.isAdmin = (req, res, next) => {
   if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Accès administrateur requis' });
   next();

@@ -9,3 +9,14 @@ test('commande valide (prix client ignoré par le backend)', () => { assert.equa
 test('rejet commande invalide', () => { const b=body();b.items[0].quantity=-2;assert.equal(validOrder(b),false); });
 test('rejet mode paiement invalide', () => { const b=body();b.paymentMethod='gratuit';assert.equal(validOrder(b),false); });
 test('validation email / statut', () => { assert.equal(email('test@example.org'),true);assert.equal(email('bad'),false);assert.ok(statuses.includes('Expédiée')); });
+
+test('rejet tentative de balise HTML dans une adresse de livraison', () => {
+  const b = body();
+  b.shippingAddress.street = '<img src=x onerror=alert(1)>';
+  assert.equal(validOrder(b), false);
+});
+test('rejet caractères HTML dans un champ utilisateur', () => {
+  const { text } = require('../utils/validation');
+  assert.equal(text('<script>alert(1)</script>', 3, 30), false);
+  assert.equal(text('Paris 17', 3, 30), true);
+});

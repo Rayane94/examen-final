@@ -1,5 +1,6 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
+const logger = require('pino')({ name: 'notifications' });
 require('dotenv').config();
 const app = express();
 app.disable('x-powered-by');
@@ -16,12 +17,12 @@ app.post('/notify', async (req, res) => {
   const { to, subject, text } = req.body || {};
   if (typeof subject !== 'string' || !subject || subject.length > 150 || typeof text !== 'string' || text.length > 5000)
     return res.status(400).json({ message: 'Notification invalide' });
-  if (!transporter) { console.log(JSON.stringify({ event:'notification_skipped', reason:'SMTP non configuré' })); return res.status(202).json({ status:'skipped', message:'SMTP non configuré' }); }
+  if (!transporter) { logger.warn({ event: 'notification_skipped', reason: 'SMTP non configuré' }); return res.status(202).json({ status:'skipped', message:'SMTP non configuré' }); }
   if (typeof to !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return res.status(400).json({ message: 'Destinataire invalide' });
   try {
     await transporter.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to, subject, text });
-    console.log(JSON.stringify({ event:'notification_sent' }));
+    logger.info({ event: 'notification_sent' });
     res.json({ status:'sent' });
-  } catch (err) { console.error(JSON.stringify({ event:'notification_failed' })); res.status(502).json({ message:'Envoi impossible' }); }
+  } catch (err) { logger.error({ event: 'notification_failed' }); res.status(502).json({ message:'Envoi impossible' }); }
 });
-app.listen(Number(process.env.NOTIFI_PORT || 4002), '0.0.0.0', () => console.log(JSON.stringify({ event:'notifications_started' })));
+app.listen(Number(process.env.NOTIFI_PORT || 4002), '0.0.0.0', () => logger.info({ event: 'notifications_started' }));

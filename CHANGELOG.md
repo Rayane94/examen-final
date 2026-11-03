@@ -1,5 +1,15 @@
 # Journal des évolutions
 
+## 2026-11-03 — Finalisation qualité et supervision
+
+- **Nginx :** résolution dynamique du backend Docker pour éviter les erreurs 502 après recréation.
+- **E25 :** journalisation normalisée avec Pino (backend, gateway, notification, stock), événements JSON lisibles dans Docker.
+- **E27–E28 :** tests des entrées HTML/JS et des rôles administrateur ; correction d'affichage du stock côté React.
+- **E29 :** commentaires JSDoc sur la validation, l'authentification et les contrôleurs de commandes/stock.
+- **Tests réels déclarés par le candidat :** administration, deux notifications SMTP reçues et alertes Uptime Kuma UP/DOWN.
+- **Limites :** préproduction/production cloud, DNS et déploiement CD restant à mettre en œuvre ; audit frontend conservant des vulnérabilités connues.
+
+
 ## 2026-11-03 — Correctifs examen
 
 ### Sécurité
