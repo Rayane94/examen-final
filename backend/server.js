@@ -32,6 +32,17 @@ app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+// Render : un unique port public pour l'API et le frontend React.
+// Le mode Docker Compose local conserve son Nginx et n'utilise pas ce bloc.
+if (process.env.SERVE_FRONTEND === 'true') {
+  const path = require('node:path');
+  const buildDirectory = path.join(__dirname, '..', 'frontend-build');
+  app.use(express.static(buildDirectory, { index: false }));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next();
+    res.sendFile(path.join(buildDirectory, 'index.html'));
+  });
+}
 app.use((req, res) => res.status(404).json({ message: 'Route inconnue' }));
 app.use((err, req, res, next) => { logger.error('unhandled_request_error'); res.status(500).json({ message: 'Erreur serveur' }); });
 const PORT = Number(process.env.PORT || 5000);

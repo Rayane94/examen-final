@@ -1,0 +1,28 @@
+# Render (service Docker unique) : React statique + API + processus internes.
+FROM node:22-alpine AS react-build
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+ENV CI=false
+RUN npm run build
+
+FROM node:22-alpine
+WORKDIR /app
+COPY backend/package*.json /app/backend/
+COPY gateway/package*.json /app/gateway/
+COPY microservices/notifications/package*.json /app/microservices/notifications/
+COPY microservices/stock-management/package*.json /app/microservices/stock-management/
+RUN cd /app/backend && npm ci --omit=dev && npm cache clean --force \
+ && cd /app/gateway && npm ci --omit=dev && npm cache clean --force \
+ && cd /app/microservices/notifications && npm ci --omit=dev && npm cache clean --force \
+ && cd /app/microservices/stock-management && npm ci --omit=dev && npm cache clean --force
+COPY backend/ /app/backend/
+COPY gateway/ /app/gateway/
+COPY microservices/notifications/ /app/microservices/notifications/
+COPY microservices/stock-management/ /app/microservices/stock-management/
+COPY --from=react-build /app/frontend/build /app/frontend-build
+COPY deploy/render/launcher.js /app/deploy/render/launcher.js
+ENV NODE_ENV=production
+EXPOSE 10000
+CMD ["node", "/app/deploy/render/launcher.js"]
